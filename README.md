@@ -6,7 +6,7 @@ and the [Remote Service Discovery](https://developer.hashicorp.com/terraform/int
 functionality.
 
 It can be used to provide a lightweight self-hosted Terraform module Registry able to resolve Terraform modules hosted 
-on GitHub by proxing the requests made by Terraform clients.
+on GitHub by proxying the requests made by Terraform clients.
 
 ## How to run it
 First you need to generate the certificates to serve traffic over HTTPS by running
