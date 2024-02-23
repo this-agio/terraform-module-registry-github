@@ -21,6 +21,7 @@ Then you can
 ```
 docker run -p 443:443 -e GITHUB_TOKEN=<YOUR GITHUB TOKEN> terraform-module-registry-github:latest <your yaml config file>
 ```
+You can get your `GITHUB_TOKEN` from [this GitHub page](https://github.com/settings/tokens).
 
 ## How to configure it
 An example of configuration can be found in [sample-config.yml](examples/sample-config.yml) and its usage in a Terraform
