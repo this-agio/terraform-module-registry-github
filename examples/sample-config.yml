@@ -1,0 +1,7 @@
+modules:
+  - namespace: my-namespace
+    name: my-module
+    system: system
+    repository: this-agio/terraform-module-example
+    versions: v{semver}
+    path: /
