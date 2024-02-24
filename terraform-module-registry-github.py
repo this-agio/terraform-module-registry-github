@@ -84,9 +84,10 @@ def versions(namespace, name, system):
     }
 
 
+from gunicorn_application import GunicornApplication
 
-app.run(
-    host='0.0.0.0',
-    port=443,
-    ssl_context=('cert.pem', 'key.pem')
-)
+GunicornApplication(app, {
+    'bind': '0.0.0.0:443',
+    'certfile': sys.argv[2],
+    'keyfile': sys.argv[3],
+}).run()
