@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 import flask
+import re
 import sys
 
 from configuration import read_configuration
-from github_client import github
+from github_client import matching_versions
 
 modules = read_configuration(sys.argv[1])
 
@@ -47,18 +48,11 @@ def download(namespace, name, system, version):
 def versions(namespace, name, system):
     module = modules[namespace][name][system]
     versions_expression = module['versions'].format(semver='([0-9]+.[0-9]+.[0-9]+)')
-    repo = github.get_repo(module['repository'])
-    versions = []
-    for tag in repo.get_tags():
-        import re
-        if re.match(re.compile(versions_expression), tag.name):
-            versions.append({'version': re.match(re.compile(versions_expression), tag.name).group(1)})
+    versions = matching_versions(module['repository'], re.compile(versions_expression))
     return {
-        'modules': [
-            {
-                'versions': versions
-            }
-        ]
+        'modules': [{
+            'versions': [{'version': v} for v in versions]
+        }]
     }
 
 from gunicorn_application import GunicornApplication
