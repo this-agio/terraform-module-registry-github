@@ -5,7 +5,7 @@ import re
 import sys
 
 from configuration import read_configuration
-from github_client import matching_versions
+from github_client import matching_versions, download_url
 
 modules = read_configuration(sys.argv[1])
 
@@ -36,8 +36,7 @@ def download(namespace, name, system, version):
     module = modules[namespace][name][system]
     resp = flask.Response()
     resp.status = 204
-    resp.headers[
-        'X-Terraform-Get'] = f'https://github.com/{module['repository']}/archive/refs/tags/{module['versions'].format(semver=version)}.tar.gz'
+    resp.headers['X-Terraform-Get'] = download_url(module, version)
     return resp
 
 @app.route('/modules/<namespace>/<name>/<system>/versions')

@@ -17,3 +17,6 @@ def matching_versions(repo, regular_expression):
                 for tag in repo.get_tags()
                 if re.match(regular_expression, tag.name)]
     return versions
+
+def download_url(module, version):
+    return f'https://github.com/{module['repository']}/archive/refs/tags/{module['versions'].format(semver=version)}.tar.gz'
