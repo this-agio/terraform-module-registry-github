@@ -27,24 +27,48 @@ import flask
 
 app = flask.Flask(__name__)
 
+from prometheus_flask_exporter import PrometheusMetrics
+
+metrics = PrometheusMetrics(app)
+
 
 @app.route('/')
+@metrics.do_not_track()
 def index():
     return 'We\'re up! 👍'
 
 
 @app.route('/.well-known/terraform.json')
+@metrics.counter('service_discovery', 'Number of service discovery invocations')
 def terraform_json():
     return {
         'modules.v1': '/modules/',
     }
 
 
+@app.route('/modules/<namespace>/<name>/<system>/<version>/download')
+@metrics.counter('downloads', 'Number of downloads',
+                 labels={'namespace': lambda: flask.request.view_args['namespace'],
+                         'name': lambda: flask.request.view_args['name'],
+                         'system': lambda: flask.request.view_args['system'],
+                         'version': lambda: flask.request.view_args['version'], })
+def download(namespace, name, system, version):
+    module = modules[namespace][name][system]
+    resp = flask.Response()
+    resp.status = 204
+    resp.headers[
+        'X-Terraform-Get'] = f'https://github.com/{module['repository']}/archive/refs/tags/{module['versions'].format(semver=version)}.tar.gz'
+    return resp
+
+
 @app.route('/modules/<namespace>/<name>/<system>/versions')
+@metrics.counter('versions', 'Number of requests of versions',
+                 labels={'namespace': lambda: flask.request.view_args['namespace'],
+                         'name': lambda: flask.request.view_args['name'],
+                         'system': lambda: flask.request.view_args['system'], })
 def versions(namespace, name, system):
     module = modules[namespace][name][system]
     versions_expression = module['versions'].format(semver='([0-9]+.[0-9]+.[0-9]+)')
-    print(versions_expression)
     repo = g.get_repo(module['repository'])
     versions = []
     for tag in repo.get_tags():
@@ -59,14 +83,6 @@ def versions(namespace, name, system):
         ]
     }
 
-
-@app.route('/modules/<namespace>/<name>/<system>/<version>/download')
-def download(namespace, name, system, version):
-    module = modules[namespace][name][system]
-    resp = flask.Response()
-    resp.status = 204
-    resp.headers['X-Terraform-Get'] = f'https://github.com/{module['repository']}/archive/refs/tags/{module['versions'].format(semver=version)}.tar.gz'
-    return resp
 
 
 app.run(
