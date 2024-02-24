@@ -1,42 +1,22 @@
 #!/usr/bin/env python
 
-import os
+import flask
 import sys
 
-if not 'GITHUB_TOKEN' in os.environ:
-    print('Environment variable GITHUB_TOKEN needs to contain a GitHub token.', file=sys.stderr)
-    exit(1)
+from configuration import read_configuration
+from github_client import github
 
-import yaml
-
-config = yaml.load(open(sys.argv[1], 'r'), Loader=yaml.FullLoader)
-modules = {}
-for module in config['modules']:
-    namespace = modules.setdefault(module['namespace'], {})
-    name = namespace.setdefault(module['name'], {})
-    system = name.setdefault(module['system'], module)
-print(modules)
-
-from github import Github
-from github import Auth
-
-auth = Auth.Token(os.environ['GITHUB_TOKEN'])
-g = Github(auth=auth)
-
-import flask
+modules = read_configuration(sys.argv[1])
 
 app = flask.Flask(__name__)
 
 from prometheus_flask_exporter import PrometheusMetrics
-
 metrics = PrometheusMetrics(app)
-
 
 @app.route('/')
 @metrics.do_not_track()
 def index():
     return 'We\'re up! 👍'
-
 
 @app.route('/.well-known/terraform.json')
 @metrics.counter('service_discovery', 'Number of service discovery invocations')
@@ -44,7 +24,6 @@ def terraform_json():
     return {
         'modules.v1': '/modules/',
     }
-
 
 @app.route('/modules/<namespace>/<name>/<system>/<version>/download')
 @metrics.counter('downloads', 'Number of downloads',
@@ -60,7 +39,6 @@ def download(namespace, name, system, version):
         'X-Terraform-Get'] = f'https://github.com/{module['repository']}/archive/refs/tags/{module['versions'].format(semver=version)}.tar.gz'
     return resp
 
-
 @app.route('/modules/<namespace>/<name>/<system>/versions')
 @metrics.counter('versions', 'Number of requests of versions',
                  labels={'namespace': lambda: flask.request.view_args['namespace'],
@@ -69,7 +47,7 @@ def download(namespace, name, system, version):
 def versions(namespace, name, system):
     module = modules[namespace][name][system]
     versions_expression = module['versions'].format(semver='([0-9]+.[0-9]+.[0-9]+)')
-    repo = g.get_repo(module['repository'])
+    repo = github.get_repo(module['repository'])
     versions = []
     for tag in repo.get_tags():
         import re
@@ -83,9 +61,7 @@ def versions(namespace, name, system):
         ]
     }
 
-
 from gunicorn_application import GunicornApplication
-
 GunicornApplication(app, {
     'bind': '0.0.0.0:443',
     'certfile': sys.argv[2],
