@@ -19,7 +19,11 @@ docker build -t terraform-module-registry-github:latest .
 ```
 Then you can 
 ```
-docker run -p 443:443 -e GITHUB_TOKEN=<YOUR GITHUB TOKEN> terraform-module-registry-github:latest <your yaml config file>
+docker run \
+    -p 443:443 \
+    -e GITHUB_TOKEN=<YOUR GITHUB TOKEN> \
+    -v $(pwd):/config \
+    terraform-module-registry-github:latest /config/<your yaml config file>
 ```
 You can get your `GITHUB_TOKEN` from [this GitHub page](https://github.com/settings/tokens).
 
