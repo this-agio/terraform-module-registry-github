@@ -26,6 +26,10 @@ You can get your `GITHUB_TOKEN` from [this GitHub page](https://github.com/setti
 ## How to configure it
 An example of configuration can be found in [sample-config.yml](examples/sample-config.yml) and its usage in a Terraform
 project can be found in [sample-usage.tf](examples/sample-usage.tf).
+Note that for using it this way locally you'll need to specify into your `/etc/hosts` file the following line:
+```
+127.0.0.1 your.domain.com
+```
 
 ## Why is it served over HTTPS instead of HTTP?
 The Terraform client automatically makes HTTPS requests, so HTTP would not work.
