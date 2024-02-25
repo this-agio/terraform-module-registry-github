@@ -4,7 +4,7 @@ import flask
 import sys
 from prometheus_flask_exporter import PrometheusMetrics
 
-from configuration import config
+from configuration import config, find_module
 from github_client import versions_from_tags, download_url
 
 app = flask.Flask(__name__)
@@ -30,7 +30,9 @@ def terraform_json():
                          'system': lambda: flask.request.view_args['system'],
                          'version': lambda: flask.request.view_args['version'], })
 def download(namespace, name, system, version):
-    module = config['modules'][namespace][name][system]
+    module = find_module(namespace, name, system)
+    if module is None:
+        return flask.abort(404)
     resp = flask.Response()
     resp.status = 204
     resp.headers['X-Terraform-Get'] = download_url(module, version)
@@ -42,7 +44,9 @@ def download(namespace, name, system, version):
                          'name': lambda: flask.request.view_args['name'],
                          'system': lambda: flask.request.view_args['system'], })
 def versions(namespace, name, system):
-    module = config['modules'][namespace][name][system]
+    module = find_module(namespace, name, system)
+    if module is None:
+        return flask.abort(404)
     return {
         'modules': [{
             'versions': [{'version': v} for v in versions_from_tags(module)]

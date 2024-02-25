@@ -17,3 +17,9 @@ def read_configuration(configuration_file):
 
 
 config = read_configuration(sys.argv[1])
+
+
+def find_module(namespace, name, system):
+    namespace = config['modules'].get(namespace) or {}
+    name = namespace.get(name) or {}
+    return name.get(system)
