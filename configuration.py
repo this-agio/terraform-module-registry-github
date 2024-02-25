@@ -1,5 +1,8 @@
 
+import sys
 import yaml
+
+
 def read_configuration(configuration_file):
     modules_configuration = yaml.load(open(configuration_file, 'r'), Loader=yaml.FullLoader)
     config = {
@@ -11,3 +14,6 @@ def read_configuration(configuration_file):
         name = namespace.setdefault(module['name'], {})
         system = name.setdefault(module['system'], module)
     return config
+
+
+config = read_configuration(sys.argv[1])

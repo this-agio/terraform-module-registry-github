@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 import flask
-import re
 import sys
 from prometheus_flask_exporter import PrometheusMetrics
 
-from configuration import read_configuration
-from github_client import matching_versions, download_url
-
-config = read_configuration(sys.argv[1])
+from configuration import config
+from github_client import versions_from_tags, download_url
 
 app = flask.Flask(__name__)
 
@@ -46,11 +43,9 @@ def download(namespace, name, system, version):
                          'system': lambda: flask.request.view_args['system'], })
 def versions(namespace, name, system):
     module = config['modules'][namespace][name][system]
-    versions_expression = module['versions'].format(semver=config['semver_regexp'])
-    versions = matching_versions(module['repository'], re.compile(versions_expression))
     return {
         'modules': [{
-            'versions': [{'version': v} for v in versions]
+            'versions': [{'version': v} for v in versions_from_tags(module)]
         }]
     }
 
