@@ -3,15 +3,15 @@
 import flask
 import re
 import sys
+from prometheus_flask_exporter import PrometheusMetrics
 
 from configuration import read_configuration
 from github_client import matching_versions, download_url
 
-modules = read_configuration(sys.argv[1])
+config = read_configuration(sys.argv[1])
 
 app = flask.Flask(__name__)
 
-from prometheus_flask_exporter import PrometheusMetrics
 metrics = PrometheusMetrics(app)
 
 @app.route('/')
@@ -33,7 +33,7 @@ def terraform_json():
                          'system': lambda: flask.request.view_args['system'],
                          'version': lambda: flask.request.view_args['version'], })
 def download(namespace, name, system, version):
-    module = modules[namespace][name][system]
+    module = config['modules'][namespace][name][system]
     resp = flask.Response()
     resp.status = 204
     resp.headers['X-Terraform-Get'] = download_url(module, version)
@@ -45,8 +45,8 @@ def download(namespace, name, system, version):
                          'name': lambda: flask.request.view_args['name'],
                          'system': lambda: flask.request.view_args['system'], })
 def versions(namespace, name, system):
-    module = modules[namespace][name][system]
-    versions_expression = module['versions'].format(semver='([0-9]+.[0-9]+.[0-9]+)')
+    module = config['modules'][namespace][name][system]
+    versions_expression = module['versions'].format(semver=config['semver_regexp'])
     versions = matching_versions(module['repository'], re.compile(versions_expression))
     return {
         'modules': [{
